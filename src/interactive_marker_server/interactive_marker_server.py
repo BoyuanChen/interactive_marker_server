@@ -79,6 +79,9 @@ class InteractiveMarkerServerNode():
 		rospy.init_node('interactive_marker_server')
 		rospy.loginfo("starting interactive marker server...")
 		rospy.Subscriber("/run_recognition",  std_msgs.msg.Empty, self.run_recognition)
+		rospy.Subscriber("/up_torso",  std_msgs.msg.Empty, self.up_feedback)
+		rospy.Subscriber("/down_torso",  std_msgs.msg.Empty, self.down_feedback)
+		rospy.Subscriber("/tuck_arm",  std_msgs.msg.Empty, self.tuck_feedback)
 		self.torso_name = "torso_controller"
 		self.torso_joint_names = ["torso_lift_joint"]
 
@@ -99,10 +102,10 @@ class InteractiveMarkerServerNode():
 
 		self.menu_handler.insert( "Go There!", callback=self.go_there_feedback)
 		self.menu_handler.insert( "Grasp It!", callback=self.grasp_feedback)
-		self.menu_handler.insert( "Up!", callback=self.up_feedback )
-		self.menu_handler.insert( "Down!", callback=self.down_feedback )
+		# self.menu_handler.insert( "Up!", callback=self.up_feedback )
+		# self.menu_handler.insert( "Down!", callback=self.down_feedback )
 		self.menu_handler.insert( "Focus on Object!", callback=self.focus_feedback )
-		self.menu_handler.insert( "Tuck Arm!", callback=self.tuck_feedback )
+		# self.menu_handler.insert( "Tuck Arm!", callback=self.tuck_feedback )
 		
 		# position = Point(0, 0, 0)
 		# make6DofMarker(False, "base_link", InteractiveMarkerControl.NONE, position, True)
@@ -158,7 +161,7 @@ class InteractiveMarkerServerNode():
 	# Up
 	def up_feedback(self,feedback):
 		rospy.loginfo("entering up_feedback")
-		rospy.loginfo("menu entry_id " + str(feedback.menu_entry_id))
+		# rospy.loginfo("menu entry_id " + str(feedback.menu_entry_id))
 		rospy.loginfo("Raising torso...")
 		self.torso_movement_helper([0.4, ])
 

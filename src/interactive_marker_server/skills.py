@@ -128,7 +128,7 @@ def grasp(model_name):
         reachability_client.send_goal(goal)    
         reachability_client.wait_for_result()
 
-        
+        reachability_check_result = reachability_client.get_result()
 
         if reachability_check_result.isPossible:
             reachable_grasps.append(grasp)
@@ -143,7 +143,6 @@ def grasp(model_name):
 
         execution_client.send_goal(goal)    
         execution_client.wait_for_result()
-        execution_client = reachability_client.get_result()
     else:
         rospy.loginfo("No reachable grasps found")
 
