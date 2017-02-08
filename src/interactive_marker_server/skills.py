@@ -16,12 +16,14 @@ from moveit_msgs.msg import PlaceLocation, MoveItErrorCodes
 from moveit_python import (MoveGroupInterface, PickPlaceInterface)
 
 #Move the base
-def goto(client, x, y, theta, frame="map"):
+def goto(client, x, y, frame="map"):
     move_goal = MoveBaseGoal()
     move_goal.target_pose.pose.position.x = x
     move_goal.target_pose.pose.position.y = y
-    move_goal.target_pose.pose.orientation.z = sin(theta/2.0)
-    move_goal.target_pose.pose.orientation.w = cos(theta/2.0)
+    # move_goal.target_pose.pose.orientation.z = sin(theta/2.0)
+    # move_goal.target_pose.pose.orientation.w = cos(theta/2.0)
+    move_goal.target_pose.pose.orientation.z = 0.998
+    move_goal.target_pose.pose.orientation.w = -0.055
     move_goal.target_pose.header.frame_id = frame
     move_goal.target_pose.header.stamp = rospy.Time.now()
     # TODO wait for things to work

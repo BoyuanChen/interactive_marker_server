@@ -145,10 +145,11 @@ class InteractiveMarkerServerNode():
 		rospy.loginfo("Waiting for move_base server...")
 		self.move_base_client.wait_for_server()
 			
-		(trans, rot) = self.tf_listener.lookupTransform('/map', '/world', rospy.Time(0))
-		x = feedback.pose.position.x + trans[0]
-		y = feedback.pose.position.y + trans[1]
-		skills.goto(self.move_base_client, x, y, 1.57)
+		# (trans, rot) = self.tf_listener.lookupTransform('/map', '/world', rospy.Time(0))
+		x = feedback.pose.position.x
+		y = feedback.pose.position.y
+		# skills.goto(self.move_base_client, x, y, 1.57)
+		skills.goto(self.move_base_client, x, y)
 
 		self.server.applyChanges()
 
@@ -196,6 +197,17 @@ if __name__ == '__main__':
 		print "i am here"
 		marker_server = InteractiveMarkerServerNode()
 
+		#hard code the table location
+		position = Point(3.842, 2.508, 0.000)
+		make6DofMarker(fixed=False, 
+				frame="map",
+				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+				position=position, 
+				server=marker_server.server,
+				menu_handler=marker_server.menu_handler,
+				show_6dof = True)
+		rospy.loginfo("set up the table location ...")
+		marker_server.server.applyChanges()
 
 		loop = rospy.Rate(30)
 		while not rospy.is_shutdown():
