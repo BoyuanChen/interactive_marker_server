@@ -70,6 +70,16 @@ def tuck():
     while not rospy.is_shutdown():
         result = move_group.moveToJointPosition(joints, pose, 0.02)
 
+def place(reachable_grasps):
+    rospy.loginfo("About to place the object ...")
+    place_client = actionlib.SimpleActionClient('place_execution_action', graspit_msgs.msg.PlaceExecutionAction)
+    place_client.wait_for_server()
+    goal = graspit_msgs.msg.PlaceExecutionGoal()
+    goal.grasp = reachable_grasps[0]
+    place_client.send_goal(goal)    
+    place_client.wait_for_result()
+    
+
 
 def grasp(model_name):
     rospy.loginfo("Calling the get_grasp call back...")
@@ -148,7 +158,7 @@ def grasp(model_name):
     else:
         rospy.loginfo("No reachable grasps found")
 
-    return []
+    return reachable_grasps
 
 # def _get_grasps_as_cb(self, goal):
 #         print("_get_grasps_as_cb")

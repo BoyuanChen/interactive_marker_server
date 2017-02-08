@@ -102,6 +102,7 @@ class InteractiveMarkerServerNode():
 
 		self.menu_handler.insert( "Go There!", callback=self.go_there_feedback)
 		self.menu_handler.insert( "Grasp It!", callback=self.grasp_feedback)
+		self.menu_handler.insert( "Place It!", callback=self.place_feedback)
 		# self.menu_handler.insert( "Up!", callback=self.up_feedback )
 		# self.menu_handler.insert( "Down!", callback=self.down_feedback )
 		self.menu_handler.insert( "Focus on Object!", callback=self.focus_feedback )
@@ -111,6 +112,7 @@ class InteractiveMarkerServerNode():
 		# make6DofMarker(False, "base_link", InteractiveMarkerControl.NONE, position, True)
 		self.server.applyChanges()
 		rospy.loginfo("interactive marker server starts up successfully...")
+		self.reachable_grasps = []
 
 	def run_recognition(self, msg):
 		rospy.loginfo("entering run recognition call back...")
@@ -135,6 +137,17 @@ class InteractiveMarkerServerNode():
 				show_6dof = True)
 			rospy.loginfo("get model info..." + str(object_info.model_name))
 
+		#hard code the table location
+		table_position = Point(3.842, 2.508, 0.000)
+		make6DofMarker(fixed=True, 
+				frame="map",
+				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+				position=table_position, 
+				server=self.server,
+				menu_handler=self.menu_handler,
+				show_6dof = True)
+		rospy.loginfo("set up the table location ...")
+
 		self.server.applyChanges()
 
 
@@ -156,8 +169,12 @@ class InteractiveMarkerServerNode():
 	def grasp_feedback(self,feedback):
 		model_name = feedback.header.frame_id
 		rospy.loginfo("planning grasp for " + str(model_name))
-		skills.grasp(model_name)
+		self.reachable_grasps = skills.grasp(model_name)
 		rospy.loginfo("entering grasp_feedback")
+
+	def place_feedback(self,feedback):
+		skills.place(self.reachable_grasps)
+		rospy.loginfo("entering pick_feedback")
 
 	# Up
 	def up_feedback(self,feedback):
