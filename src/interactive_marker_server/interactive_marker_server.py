@@ -128,8 +128,9 @@ class InteractiveMarkerServerNode():
 		for object_info in result.object_info:
 			position = object_info.object_pose.position
 			position = Point(position.x, position.y, position.z)
+			# position = Point(0, 0, 0)
 			make6DofMarker(fixed=False, 
-				frame=object_info.model_name,
+				frame="world",
 				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
 				position=position, 
 				server=self.server,
