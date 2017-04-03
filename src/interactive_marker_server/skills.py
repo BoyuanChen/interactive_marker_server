@@ -109,6 +109,8 @@ def grasp(model_name):
     reachability_client.wait_for_server()
 
     reachable_grasps = []
+    import IPython
+    IPython.embed()
     #Grasp needs to be transford by world space coords of object (which is potentially rotated also)
     #Also the rendering needs to take into account the gripper dof and position
     for i, unchecked_grasp in enumerate(unchecked_for_reachability_grasps):

@@ -23,17 +23,34 @@ def alignMarker( feedback, server ):
     server.setPose( feedback.marker_name, pose )
     server.applyChanges()
 
-def makeBox( msg ):
+# def makeBox( msg ):
+#     marker = Marker()
+
+#     marker.type = Marker.CUBE
+#     marker.scale.x = msg.scale * 0.45
+#     marker.scale.y = msg.scale * 0.45
+#     marker.scale.z = msg.scale * 0.45
+#     marker.color.r = 0.5
+#     marker.color.g = 0.5
+#     marker.color.b = 0.5
+#     marker.color.a = 1.0
+
+#     return marker
+
+def makeBox(msg):
     marker = Marker()
 
-    marker.type = Marker.CUBE
-    marker.scale.x = msg.scale * 0.45
-    marker.scale.y = msg.scale * 0.45
-    marker.scale.z = msg.scale * 0.45
-    marker.color.r = 0.5
-    marker.color.g = 0.5
-    marker.color.b = 0.5
-    marker.color.a = 1.0
+    marker.mesh_use_embedded_materials = True
+    # marker.type = Marker.MESH_RESOURCE
+    marker.type = Marker.MESH_RESOURCE
+    marker.mesh_resource = "package://interactive_marker_server/meshes/all.vtk.stl"
+    marker.scale.x = msg.scale
+    marker.scale.y = msg.scale
+    marker.scale.z = msg.scale
+    marker.color.r = 0
+    marker.color.g = 1
+    marker.color.b = 0
+    marker.color.a = 0.5
 
     return marker
 
@@ -86,7 +103,10 @@ def markerProcessFeedback( feedback ):
 
 #####################################################################
 # Marker Creation
-
+# TODO: 1.change the position to be a list
+#       2.change the beginning part: int_marker to be a for loop and make the int_marker append
+#       so that we can fix the problem: only show up one interactive marker when we update and do not have to
+#       call the function many times. Just give different position information to it.
 def make6DofMarker( fixed, frame, interaction_mode, position, server, menu_handler, show_6dof = False):
     int_marker = InteractiveMarker()
     int_marker.header.frame_id = frame

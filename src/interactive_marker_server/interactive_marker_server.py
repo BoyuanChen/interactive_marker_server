@@ -138,7 +138,8 @@ class InteractiveMarkerServerNode():
 			rospy.loginfo("get model info..." + str(object_info.model_name))
 
 		#hard code the table location
-		table_position = Point(3.842, 2.508, 0.000)
+		# table_position = Point(-3.100, 5.099, 0.000)
+		table_position = Point(-2.991, -0.950, 0.000)
 		make6DofMarker(fixed=True, 
 				frame="map",
 				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
@@ -147,6 +148,15 @@ class InteractiveMarkerServerNode():
 				menu_handler=self.menu_handler,
 				show_6dof = True)
 		rospy.loginfo("set up the table location ...")
+
+		# back_up_position = Point(-0.553, -0.179, 0.000)
+		# make6DofMarker(fixed=True, 
+		# 		frame="map",
+		# 		interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+		# 		position=back_up_position, 
+		# 		server=self.server,
+		# 		menu_handler=self.menu_handler,
+		# 		show_6dof = True)
 
 		self.server.applyChanges()
 
@@ -215,8 +225,9 @@ if __name__ == '__main__':
 		marker_server = InteractiveMarkerServerNode()
 
 		#hard code the table location
-		position = Point(3.842, 2.508, 0.000)
-		make6DofMarker(fixed=False, 
+		# position = Point(-3.100, 5.099, 0.000)
+		position = Point(-2.991, -0.950, 0.000)
+		make6DofMarker(fixed=True, 
 				frame="map",
 				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
 				position=position, 
@@ -224,6 +235,20 @@ if __name__ == '__main__':
 				menu_handler=marker_server.menu_handler,
 				show_6dof = True)
 		rospy.loginfo("set up the table location ...")
+
+		marker_server.server.applyChanges()
+
+		back_up_position = Point(-0.553, -0.179, 0.000)
+		make6DofMarker(fixed=False, 
+				frame="map",
+				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+				position=back_up_position, 
+				server=marker_server.server,
+				menu_handler=marker_server.menu_handler,
+				show_6dof = True)
+		rospy.loginfo("set up the back up location ...")
+
+
 		marker_server.server.applyChanges()
 
 		loop = rospy.Rate(30)
