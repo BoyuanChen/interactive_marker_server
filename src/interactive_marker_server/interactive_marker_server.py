@@ -95,6 +95,8 @@ class InteractiveMarkerServerNode():
 		self.rec_objects_action_client = actionlib.SimpleActionClient("recognize_objects_action", graspit_msgs.msg.RunObjectRecognitionAction)
 		self.tf_listener = tf.TransformListener()
 
+		self.info2name = []
+
 
 		self.server = InteractiveMarkerServer("basic_controls")
 
@@ -129,6 +131,8 @@ class InteractiveMarkerServerNode():
 			position = object_info.object_pose.position
 			position = Point(position.x, position.y, position.z)
 			# position = Point(0, 0, 0)
+			self.info2name.append(object_info.model_name)
+
 			make6DofMarker(fixed=False, 
 				frame="world",
 				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
@@ -178,7 +182,9 @@ class InteractiveMarkerServerNode():
 		self.server.applyChanges()
 
 	def grasp_feedback(self,feedback):
-		model_name = feedback.header.frame_id
+		import IPython
+		IPython.embed()
+		model_name = self.info2name[0]
 		rospy.loginfo("planning grasp for " + str(model_name))
 		self.reachable_grasps = skills.grasp(model_name)
 		rospy.loginfo("entering grasp_feedback")

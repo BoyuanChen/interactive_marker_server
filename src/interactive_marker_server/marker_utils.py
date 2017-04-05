@@ -117,7 +117,7 @@ def make6DofMarker( fixed, frame, interaction_mode, position, server, menu_handl
     int_marker.description = "Simple 6-DOF Control"
 
     # insert a box
-    makeBoxControl(int_marker)
+    control = makeBoxControl(int_marker)
     int_marker.controls[0].interaction_mode = interaction_mode
 
     if fixed:
