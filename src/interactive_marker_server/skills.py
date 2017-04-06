@@ -146,6 +146,7 @@ def grasp(model_name):
 
         if reachability_check_result.isPossible:
             reachable_grasps.append(grasp)
+            break
 
     if len(reachable_grasps):
         rospy.loginfo("going to execute first reachable grasp")

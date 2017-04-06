@@ -37,13 +37,13 @@ def alignMarker( feedback, server ):
 
 #     return marker
 
-def makeBox(msg):
+def makeBox(msg, mesh_filepath="package://interactive_marker_server/meshes/all.vtk.stl"):
     marker = Marker()
 
     marker.mesh_use_embedded_materials = True
     # marker.type = Marker.MESH_RESOURCE
     marker.type = Marker.MESH_RESOURCE
-    marker.mesh_resource = "package://interactive_marker_server/meshes/all.vtk.stl"
+    marker.mesh_resource = mesh_filepath
     marker.scale.x = msg.scale
     marker.scale.y = msg.scale
     marker.scale.z = msg.scale
@@ -54,11 +54,11 @@ def makeBox(msg):
 
     return marker
 
-def makeBoxControl( msg ):
+def makeBoxControl(msg, mesh_filepath="package://interactive_marker_server/meshes/all.vtk.stl"):
     control =  InteractiveMarkerControl()
     control.always_visible = True
-    control.markers.append( makeBox(msg) )
-    msg.controls.append( control )
+    control.markers.append(makeBox(msg, mesh_filepath))
+    msg.controls.append(control)
     return control
 
 def saveMarker( int_marker ):
@@ -107,17 +107,29 @@ def markerProcessFeedback( feedback ):
 #       2.change the beginning part: int_marker to be a for loop and make the int_marker append
 #       so that we can fix the problem: only show up one interactive marker when we update and do not have to
 #       call the function many times. Just give different position information to it.
-def make6DofMarker( fixed, frame, interaction_mode, position, server, menu_handler, show_6dof = False):
+def make6DofMarker(
+    fixed, 
+    frame, 
+    interaction_mode, 
+    position, 
+    orientation, 
+    server, 
+    menu_handler, 
+    show_6dof = False, 
+    mesh_filepath="package://interactive_marker_server/meshes/all.vtk.stl"):
+    
     int_marker = InteractiveMarker()
     int_marker.header.frame_id = frame
     int_marker.pose.position = position
+    int_marker.pose.orientation = orientation
+    rospy.loginfo("orientation is:" + str(int_marker.pose.orientation))
     int_marker.scale = 1
 
     int_marker.name = "simple_6dof"
     int_marker.description = "Simple 6-DOF Control"
 
     # insert a box
-    control = makeBoxControl(int_marker)
+    control = makeBoxControl(int_marker, mesh_filepath)
     int_marker.controls[0].interaction_mode = interaction_mode
 
     if fixed:

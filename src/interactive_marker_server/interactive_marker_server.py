@@ -126,33 +126,57 @@ class InteractiveMarkerServerNode():
 		self.rec_objects_action_client.wait_for_result()
 		rospy.loginfo("reveiving result...")
 		result = self.rec_objects_action_client.get_result()
-
+		# import IPython
+		# IPython.embed()
 		for object_info in result.object_info:
+			mesh_filepath = object_info.mesh_path_dae
+			pieces = mesh_filepath.split("/")
+			filename = ""
+			if len(pieces) > 0:
+				filename = pieces[len(pieces)-1]
+			else:
+				rospy.loginfo("No mesh file path found, quitting...")
+				return
+
+			mesh_copy_filepath_rbwt = "/home/bo/ros/web-ui/control-panel-react/public/interactive_marker_server/meshes/" + filename
+			mesh_copy_filepath_rviz = "/home/bo/ros/grasp_ws/basestation_ws/src/interactive_marker_server/meshes/" + filename
+			from shutil import copyfile
+			copyfile(mesh_filepath, mesh_copy_filepath_rbwt)
+			copyfile(mesh_filepath, mesh_copy_filepath_rviz)
+			
+
 			position = object_info.object_pose.position
+			object_pose = object_info.object_pose.orientation
+			orientation = geometry_msgs.msg.Quaternion(object_pose.x, object_pose.y, object_pose.z, object_pose.w)
+
+
 			position = Point(position.x, position.y, position.z)
 			# position = Point(0, 0, 0)
-			self.info2name.append(object_info.model_name)
+			self.info2name.append(object_info.mesh_path_ply)
+
 
 			make6DofMarker(fixed=False, 
 				frame="world",
 				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-				position=position, 
+				position=position,
+				orientation=orientation, 
 				server=self.server,
 				menu_handler=self.menu_handler,
-				show_6dof = True)
+				show_6dof = True,
+				mesh_filepath = "package://interactive_marker_server/meshes/" + filename)
 			rospy.loginfo("get model info..." + str(object_info.model_name))
 
 		#hard code the table location
 		# table_position = Point(-3.100, 5.099, 0.000)
-		table_position = Point(-2.991, -0.950, 0.000)
-		make6DofMarker(fixed=True, 
-				frame="map",
-				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-				position=table_position, 
-				server=self.server,
-				menu_handler=self.menu_handler,
-				show_6dof = True)
-		rospy.loginfo("set up the table location ...")
+		# table_position = Point(-2.991, -0.950, 0.000)
+		# make6DofMarker(fixed=True, 
+		# 		frame="map",
+		# 		interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+		# 		position=table_position, 
+		# 		server=self.server,
+		# 		menu_handler=self.menu_handler,
+		# 		show_6dof = True)
+		# rospy.loginfo("set up the table location ...")
 
 		# back_up_position = Point(-0.553, -0.179, 0.000)
 		# make6DofMarker(fixed=True, 
@@ -234,10 +258,12 @@ if __name__ == '__main__':
 		#hard code the table location
 		# position = Point(-3.100, 5.099, 0.000)
 		position = Point(-2.991, -0.950, 0.000)
+		orientation = geometry_msgs.msg.Quaternion(0.0, 0.0, 0.0, 1.0)
 		make6DofMarker(fixed=True, 
 				frame="map",
 				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-				position=position, 
+				position=position,
+				orientation = orientation,
 				server=marker_server.server,
 				menu_handler=marker_server.menu_handler,
 				show_6dof = True)
@@ -249,7 +275,8 @@ if __name__ == '__main__':
 		make6DofMarker(fixed=False, 
 				frame="map",
 				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-				position=back_up_position, 
+				position=back_up_position,
+				orientation = orientation, 
 				server=marker_server.server,
 				menu_handler=marker_server.menu_handler,
 				show_6dof = True)
