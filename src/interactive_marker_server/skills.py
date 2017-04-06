@@ -81,24 +81,30 @@ def place(reachable_grasps):
     
 
 
-def grasp(model_name):
+def grasp(
+    model_name, 
+    mesh_path, 
+    frame, 
+    robot="fetch_gripper", 
+    obstacle="table"):
+
     rospy.loginfo("Calling the get_grasp call back...")
   
     gc = graspit_commander.GraspitCommander()
 
     rospy.loginfo("About to plan grasps in Graspit")
     gc.clearWorld()
-    gc.importObstacle("table")
+    gc.importObstacle(obstacle)
     table_pose = geometry_msgs.msg.Pose()
     table_pose.orientation.w = 1
     table_pose.position.x = 0.53
     table_pose.position.y = -0.687
-    table_pose.position.z = 0.445
+    table_pose.position.z = 0.505
     gc.setBodyPose(0,table_pose)
 
-    gc.importRobot("fetch_gripper")
+    gc.importRobot(robot)
 
-    gc.importGraspableBody(model_name) #Find the right model using goal, can't find gillete in the folder
+    gc.importGraspableBody(mesh_path) #Find the right model using goal, can't find gillete in the folder
 
     response = gc.planGrasps()
     unchecked_for_reachability_grasps = response.grasps
@@ -109,8 +115,7 @@ def grasp(model_name):
     reachability_client.wait_for_server()
 
     reachable_grasps = []
-    import IPython
-    IPython.embed()
+
     #Grasp needs to be transford by world space coords of object (which is potentially rotated also)
     #Also the rendering needs to take into account the gripper dof and position
     for i, unchecked_grasp in enumerate(unchecked_for_reachability_grasps):
@@ -160,7 +165,8 @@ def grasp(model_name):
         execution_client.wait_for_result()
     else:
         rospy.loginfo("No reachable grasps found")
-
+    import IPython
+    IPython.embed()
     return reachable_grasps
 
 # def _get_grasps_as_cb(self, goal):

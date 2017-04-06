@@ -152,7 +152,11 @@ class InteractiveMarkerServerNode():
 
 			position = Point(position.x, position.y, position.z)
 			# position = Point(0, 0, 0)
-			self.info2name.append(object_info.mesh_path_ply)
+			self.info2name.append({
+				"mesh_path": object_info.mesh_path_ply, 
+				"model_name": "mesh", 
+				"frame": "frame"
+			})
 
 
 			make6DofMarker(fixed=False, 
@@ -206,11 +210,13 @@ class InteractiveMarkerServerNode():
 		self.server.applyChanges()
 
 	def grasp_feedback(self,feedback):
-		import IPython
-		IPython.embed()
-		model_name = self.info2name[0]
-		rospy.loginfo("planning grasp for " + str(model_name))
-		self.reachable_grasps = skills.grasp(model_name)
+		model_meta = self.info2name[0]
+		rospy.loginfo("planning grasp for " + str(model_meta))
+		self.reachable_grasps = skills.grasp(
+			model_name=model_meta["model_name"], 
+			mesh_path=model_meta["mesh_path"],
+			frame=model_meta["frame"]
+		)
 		rospy.loginfo("entering grasp_feedback")
 
 	def place_feedback(self,feedback):
