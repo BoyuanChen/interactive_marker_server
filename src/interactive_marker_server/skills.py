@@ -18,6 +18,7 @@ from moveit_python import (MoveGroupInterface, PickPlaceInterface)
 
 from grid_sample_client import GridSampleClient
 from graspit_commander import GraspitCommander
+import graspit_interface.msg
 
 #Move the base
 def goto(client, x, y, frame="map"):
@@ -136,11 +137,11 @@ def grasp(
     # final_grasp = final_grasps[0][1]
 
 
-    unchecked_for_reachability_grasps = response.grasps
+
     rospy.loginfo("We have received grasps from Graspit")
 
     rospy.loginfo("checking grasps for reachability")
-    reachability_client = actionlib.SimpleActionClient('analyze_grasp_action', graspit_msgs.msg.CheckGraspReachabilityAction)
+    reachability_client = actionlib.SimpleActionClient('analyze_grasp_action', graspit_interface.msg.CheckGraspReachabilityAction)
     reachability_client.wait_for_server()
 
     reachable_grasps = []
@@ -150,29 +151,31 @@ def grasp(
     for i, unchecked_grasp in enumerate(unchecked_for_reachability_grasps):
         rospy.loginfo("checking grasps for reachability")
 
-        grasp = graspit_msgs.msg.Grasp()
-        grasp.grasp_id = i
+        # grasp = graspit_msgs.msg.Grasp()
+        # grasp.grasp_id = i
 
-        grasp.object_name = model_name
-        pre_grasp_pose = geometry_msgs.msg.Pose()
-        pre_grasp_pose.position = unchecked_grasp[i][1].pose.position
-        pre_grasp_pose.orientation = unchecked_grasp[i][1].pose.orientation
-        grasp.pre_grasp_pose = pre_grasp_pose
+        # grasp.object_name = model_name
+        # pre_grasp_pose = geometry_msgs.msg.Pose()
+        # pre_grasp_pose.position = unchecked_grasp[1].pose.position
+        # pre_grasp_pose.orientation = unchecked_grasp[1].pose.orientation
+        # grasp.pre_grasp_pose = pre_grasp_pose
 
-        final_grasp_pose = geometry_msgs.msg.Pose()
-        final_grasp_pose.position = unchecked_grasp[i][1].pose.position
-        final_grasp_pose.orientation = unchecked_grasp[i][1].pose.orientation
-        #print "here mf: \n\n\n\n\n\n\n\n" + str(final_grasp_pose.position.x)
-        #final_grasp_pose.position.x = tmp/50.0
-        grasp.final_grasp_pose = final_grasp_pose
+        # final_grasp_pose = geometry_msgs.msg.Pose()
+        # final_grasp_pose.position = unchecked_grasp[1].pose.position
+        # final_grasp_pose.orientation = unchecked_grasp[1].pose.orientation
+        # #print "here mf: \n\n\n\n\n\n\n\n" + str(final_grasp_pose.position.x)
+        # #final_grasp_pose.position.x = tmp/50.0
+        # grasp.final_grasp_pose = final_grasp_pose
 
-        grasp.pre_grasp_dof = [0.09] #Maximum cm the gripper can open #copy in from graspit commander
-        # grasp.final_grasp_dof = unchecked_grasp.dofs #have the gripper close all the way for now
-        grasp.final_grasp_dof = [0.0]
+        # grasp.pre_grasp_dof = [0.09] #Maximum cm the gripper can open #copy in from graspit commander
+        # # grasp.final_grasp_dof = unchecked_grasp.dofs #have the gripper close all the way for now
+        # grasp.final_grasp_dof = [0.0]
 
-        #this is the message we are sending to reachability analyzer to check for reachability
-        goal = graspit_msgs.msg.CheckGraspReachabilityGoal()
-        goal.grasp = grasp
+        # #this is the message we are sending to reachability analyzer to check for reachability
+        goal = graspit_interface.msg.CheckGraspReachabilityGoal()
+        goal.grasp = unchecked_grasp[1]
+        goal.grasp.object_name = model_name
+        goal.grasp.grasp_id = i
 
         reachability_client.send_goal(goal)    
         reachability_client.wait_for_result()
@@ -180,7 +183,7 @@ def grasp(
         reachability_check_result = reachability_client.get_result()
 
         if reachability_check_result.isPossible:
-            reachable_grasps.append(grasp)
+            reachable_grasps.append(goal.grasp)
             break
 
     if len(reachable_grasps):
