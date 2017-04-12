@@ -15,6 +15,10 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from moveit_msgs.msg import PlaceLocation, MoveItErrorCodes
 from moveit_python import (MoveGroupInterface, PickPlaceInterface)
 
+
+from grid_sample_client import GridSampleClient
+from graspit_commander import GraspitCommander
+
 #Move the base
 def goto(client, x, y, frame="map"):
     move_goal = MoveBaseGoal()
@@ -94,19 +98,44 @@ def grasp(
 
     rospy.loginfo("About to plan grasps in Graspit")
     gc.clearWorld()
-    gc.importObstacle(obstacle)
-    table_pose = geometry_msgs.msg.Pose()
-    table_pose.orientation.w = 1
-    table_pose.position.x = 0.53
-    table_pose.position.y = -0.687
-    table_pose.position.z = 0.505
-    gc.setBodyPose(0,table_pose)
+
+
+    # gc.importObstacle(obstacle)
+    # table_pose = geometry_msgs.msg.Pose()
+    # table_pose.orientation.w = 1
+    # table_pose.position.x = 0.53
+    # table_pose.position.y = -0.687
+    # table_pose.position.z = 0.505
+    # gc.setBodyPose(0,table_pose)
 
     gc.importRobot(robot)
-
     gc.importGraspableBody(mesh_path) #Find the right model using goal, can't find gillete in the folder
 
-    response = gc.planGrasps()
+
+    # response = gc.planGrasps()
+    gl = GridSampleClient()
+    result = gl.getSamples(20)
+    pre_grasps = result.grasps
+    unchecked_for_reachability_grasps = []
+    for i, pre_grasp in enumerate(pre_grasps):
+        gc.toggleAllCollisions(False)
+        g = result.grasps[i]
+        gc.setRobotPose(g.pose)
+        gc.approachToContact(-100)
+        gc.forceRobotDof([4,])
+        gc.toggleAllCollisions(True)
+        gc.approachToContact(150)
+        gc.autoGrasp()
+
+        # we want to final grasp position, not the 
+        # pregrasp position
+        g.pose = gc.getRobot().robot.pose
+        unchecked_for_reachability_grasps.append((gc.computeQuality().volume, g))
+
+    unchecked_for_reachability_grasps.sort(reverse=True)
+    # final_grasp = final_grasps[0][1]
+
+
     unchecked_for_reachability_grasps = response.grasps
     rospy.loginfo("We have received grasps from Graspit")
 
@@ -126,19 +155,20 @@ def grasp(
 
         grasp.object_name = model_name
         pre_grasp_pose = geometry_msgs.msg.Pose()
-        pre_grasp_pose.position = unchecked_grasp.pose.position
-        pre_grasp_pose.orientation = unchecked_grasp.pose.orientation
+        pre_grasp_pose.position = unchecked_grasp[i][1].pose.position
+        pre_grasp_pose.orientation = unchecked_grasp[i][1].pose.orientation
         grasp.pre_grasp_pose = pre_grasp_pose
 
         final_grasp_pose = geometry_msgs.msg.Pose()
-        final_grasp_pose.position = unchecked_grasp.pose.position
-        final_grasp_pose.orientation = unchecked_grasp.pose.orientation
+        final_grasp_pose.position = unchecked_grasp[i][1].pose.position
+        final_grasp_pose.orientation = unchecked_grasp[i][1].pose.orientation
         #print "here mf: \n\n\n\n\n\n\n\n" + str(final_grasp_pose.position.x)
         #final_grasp_pose.position.x = tmp/50.0
         grasp.final_grasp_pose = final_grasp_pose
 
         grasp.pre_grasp_dof = [0.09] #Maximum cm the gripper can open #copy in from graspit commander
-        grasp.final_grasp_dof = unchecked_grasp.dofs #have the gripper close all the way for now
+        # grasp.final_grasp_dof = unchecked_grasp.dofs #have the gripper close all the way for now
+        grasp.final_grasp_dof = [0.0]
 
         #this is the message we are sending to reachability analyzer to check for reachability
         goal = graspit_msgs.msg.CheckGraspReachabilityGoal()

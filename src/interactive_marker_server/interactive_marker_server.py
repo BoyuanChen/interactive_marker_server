@@ -211,11 +211,14 @@ class InteractiveMarkerServerNode():
 
 	def grasp_feedback(self,feedback):
 		model_meta = self.info2name[0]
+		model_name=model_meta["model_name"] 
+		mesh_path=model_meta["mesh_path"]
+		frame=model_meta["frame"]
 		rospy.loginfo("planning grasp for " + str(model_meta))
 		self.reachable_grasps = skills.grasp(
-			model_name=model_meta["model_name"], 
-			mesh_path=model_meta["mesh_path"],
-			frame=model_meta["frame"]
+			model_name,
+			mesh_path,
+			frame
 		)
 		rospy.loginfo("entering grasp_feedback")
 
