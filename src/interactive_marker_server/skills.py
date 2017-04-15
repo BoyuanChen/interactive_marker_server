@@ -75,12 +75,12 @@ def tuck():
     while not rospy.is_shutdown():
         result = move_group.moveToJointPosition(joints, pose, 0.02)
 
-def place(reachable_grasps):
+def place(save_for_place_grasps):
     rospy.loginfo("About to place the object ...")
-    place_client = actionlib.SimpleActionClient('place_execution_action', graspit_msgs.msg.PlaceExecutionAction)
+    place_client = actionlib.SimpleActionClient('place_execution_action', graspit_interface.msg.PlaceExecutionAction)
     place_client.wait_for_server()
-    goal = graspit_msgs.msg.PlaceExecutionGoal()
-    goal.grasp = reachable_grasps[0]
+    goal = graspit_interface.msg.PlaceExecutionGoal()
+    goal.grasp = save_for_place_grasps[0]
     place_client.send_goal(goal)    
     place_client.wait_for_result()
     
@@ -145,6 +145,7 @@ def grasp(
     reachability_client.wait_for_server()
 
     reachable_grasps = []
+    save_for_place_grasps = []
 
     #Grasp needs to be transford by world space coords of object (which is potentially rotated also)
     #Also the rendering needs to take into account the gripper dof and position
@@ -177,21 +178,41 @@ def grasp(
         goal.grasp.object_name = model_name
         goal.grasp.grasp_id = i
 
+        pre_grasp_pose = geometry_msgs.msg.Pose()
+        pre_grasp_pose.position = unchecked_grasp[1].pose.position
+        pre_grasp_pose.orientation = unchecked_grasp[1].pose.orientation
+        goal.grasp.pre_grasp_pose = pre_grasp_pose
+
+        final_grasp_pose = geometry_msgs.msg.Pose()
+        final_grasp_pose.position = unchecked_grasp[1].pose.position
+        final_grasp_pose.orientation = unchecked_grasp[1].pose.orientation
+        goal.grasp.final_grasp_pose = final_grasp_pose
+        goal.grasp.pre_grasp_dof = [0.09]
+        goal.grasp.final_grasp_dof = [0.0]
+
+
+        #just hard code this for now. We need to fix this later in graspit_interface
+        goal.grasp.approach_direction.vector.z = 1.0
+
+
         reachability_client.send_goal(goal)    
         reachability_client.wait_for_result()
 
-        reachability_check_result = reachability_client.get_result()
 
+        reachability_check_result = reachability_client.get_result()
         if reachability_check_result.isPossible:
             reachable_grasps.append(goal.grasp)
+            save_for_place_grasps.append(goal.grasp)
             break
 
     if len(reachable_grasps):
         rospy.loginfo("going to execute first reachable grasp")
-        execution_client = actionlib.SimpleActionClient('grasp_execution_action', graspit_msgs.msg.GraspExecutionAction)
+        import IPython
+        IPython.embed()
+        execution_client = actionlib.SimpleActionClient('grasp_execution_action', graspit_interface.msg.GraspExecutionAction)
         execution_client.wait_for_server()
 
-        goal = graspit_msgs.msg.GraspExecutionGoal()
+        goal = graspit_interface.msg.GraspExecutionGoal()
         goal.grasp = reachable_grasps[0]
 
         execution_client.send_goal(goal)    
