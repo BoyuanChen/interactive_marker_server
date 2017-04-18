@@ -82,7 +82,7 @@ class InteractiveMarkerServerNode():
 		rospy.Subscriber("/up_torso",  std_msgs.msg.Empty, self.up_feedback)
 		rospy.Subscriber("/down_torso",  std_msgs.msg.Empty, self.down_feedback)
 		rospy.Subscriber("/tuck_arm",  std_msgs.msg.Empty, self.tuck_feedback)
-		rospy.Subscriber("/robot_pose",  geometry_msgs.msg.PoseStamped, self.robot_pose_publisher)
+		rospy.Subscriber("/robot_pose",  std_msgs.msg.Empty, self.robot_pose_publisher)
 		self.torso_name = "torso_controller"
 		self.torso_joint_names = ["torso_lift_joint"]
 
@@ -265,7 +265,7 @@ class InteractiveMarkerServerNode():
         self.listener.waitForTransform("/map", "/base_link", rospy.Time(0),rospy.Duration(10))
         robot_pose = pm.toMsg(pm.fromTf(self.listener.lookupTransform("/map", "/base_link", rospy.Time(0))))
         robot_info.pose = robot_pose
-        pub = rospy.Publisher('robot_pose', PoseStamped, queue_size=10)
+        pub = rospy.Publisher('robot_info', geometry_msgs.msg.PoseStamped, queue_size=10)
         while not rospy.is_shutdown():
 	        pub.publish(robot_info)
 
