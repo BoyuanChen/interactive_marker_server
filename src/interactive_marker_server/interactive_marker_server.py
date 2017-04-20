@@ -74,229 +74,245 @@ import graspit_msgs.msg
 
 class InteractiveMarkerServerNode():
 
-	def __init__(self):
+    def __init__(self):
 
-		rospy.init_node('interactive_marker_server')
-		rospy.loginfo("starting interactive marker server...")
-		rospy.Subscriber("/run_recognition",  std_msgs.msg.Empty, self.run_recognition)
-		rospy.Subscriber("/up_torso",  std_msgs.msg.Empty, self.up_feedback)
-		rospy.Subscriber("/down_torso",  std_msgs.msg.Empty, self.down_feedback)
-		rospy.Subscriber("/tuck_arm",  std_msgs.msg.Empty, self.tuck_feedback)
-		self.torso_name = "torso_controller"
-		self.torso_joint_names = ["torso_lift_joint"]
+        rospy.init_node('interactive_marker_server')
+        rospy.loginfo("starting interactive marker server...")
+        rospy.Subscriber("/run_recognition",  std_msgs.msg.Empty, self.run_recognition)
+        rospy.Subscriber("/up_torso",  std_msgs.msg.Empty, self.up_feedback)
+        rospy.Subscriber("/down_torso",  std_msgs.msg.Empty, self.down_feedback)
+        rospy.Subscriber("/tuck_arm",  std_msgs.msg.Empty, self.tuck_feedback)
+        self.torso_name = "torso_controller"
+        self.torso_joint_names = ["torso_lift_joint"]
 
-		self.move_base_client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        self.move_base_client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
-		self.torso_client = actionlib.SimpleActionClient("%s/follow_joint_trajectory" % self.torso_name,
-											   FollowJointTrajectoryAction)
-		
+        self.torso_client = actionlib.SimpleActionClient("%s/follow_joint_trajectory" % self.torso_name,
+                                               FollowJointTrajectoryAction)
+        
 
-		self.head_client = actionlib.SimpleActionClient("head_controller/point_head", PointHeadAction)
-		self.rec_objects_action_client = actionlib.SimpleActionClient("recognize_objects_action", graspit_msgs.msg.RunObjectRecognitionAction)
-		self.tf_listener = tf.TransformListener()
+        self.head_client = actionlib.SimpleActionClient("head_controller/point_head", PointHeadAction)
+        self.rec_objects_action_client = actionlib.SimpleActionClient("recognize_objects_action", graspit_msgs.msg.RunObjectRecognitionAction)
+        self.tf_listener = tf.TransformListener()
 
-		self.info2name = []
+        self.info2name = []
 
 
-		self.server = InteractiveMarkerServer("basic_controls")
+        self.server = InteractiveMarkerServer("basic_controls")
 
-		self.menu_handler = MenuHandler()
+        self.menu_handler = MenuHandler()
 
-		self.menu_handler.insert( "Go There!", callback=self.go_there_feedback)
-		self.menu_handler.insert( "Grasp It!", callback=self.grasp_feedback)
-		self.menu_handler.insert( "Place It!", callback=self.place_feedback)
-		# self.menu_handler.insert( "Up!", callback=self.up_feedback )
-		# self.menu_handler.insert( "Down!", callback=self.down_feedback )
-		self.menu_handler.insert( "Focus on Object!", callback=self.focus_feedback )
-		# self.menu_handler.insert( "Tuck Arm!", callback=self.tuck_feedback )
-		
-		# position = Point(0, 0, 0)
-		# make6DofMarker(False, "base_link", InteractiveMarkerControl.NONE, position, True)
-		self.server.applyChanges()
-		rospy.loginfo("interactive marker server starts up successfully...")
-		self.reachable_grasps = []
+        self.menu_handler.insert( "Go There!", callback=self.go_there_feedback)
+        self.menu_handler.insert( "Grasp It!", callback=self.grasp_feedback)
+        self.menu_handler.insert( "Place It!", callback=self.place_feedback)
+        # self.menu_handler.insert( "Up!", callback=self.up_feedback )
+        # self.menu_handler.insert( "Down!", callback=self.down_feedback )
+        self.menu_handler.insert( "Focus on Object!", callback=self.focus_feedback )
+        # self.menu_handler.insert( "Tuck Arm!", callback=self.tuck_feedback )
+        
+        # position = Point(0, 0, 0)
+        # make6DofMarker(False, "base_link", InteractiveMarkerControl.NONE, position, True)
+        self.server.applyChanges()
+        rospy.loginfo("interactive marker server starts up successfully...")
+        self.reachable_grasps = []
 
-	def run_recognition(self, msg):
-		rospy.loginfo("entering run recognition call back...")
-		goal = graspit_msgs.msg.RunObjectRecognitionActionGoal()
+    def run_recognition(self, msg):
+        rospy.loginfo("entering run recognition call back...")
+        goal = graspit_msgs.msg.RunObjectRecognitionActionGoal()
    
-		# TODO wait for things to work
-		self.rec_objects_action_client.send_goal(goal)
-		rospy.loginfo("send run recognition goal...")
-		self.rec_objects_action_client.wait_for_result()
-		rospy.loginfo("reveiving result...")
-		result = self.rec_objects_action_client.get_result()
-		# import IPython
-		# IPython.embed()
-		for object_info in result.object_info:
-			mesh_filepath = object_info.mesh_path_dae
-			pieces = mesh_filepath.split("/")
-			filename = ""
-			if len(pieces) > 0:
-				filename = pieces[len(pieces)-1]
-			else:
-				rospy.loginfo("No mesh file path found, quitting...")
-				return
+        # TODO wait for things to work
+        self.rec_objects_action_client.send_goal(goal)
+        rospy.loginfo("send run recognition goal...")
+        self.rec_objects_action_client.wait_for_result()
+        rospy.loginfo("reveiving result...")
+        result = self.rec_objects_action_client.get_result()
+        # import IPython
+        # IPython.embed()
+        for object_info in result.object_info:
+            mesh_filepath = object_info.mesh_path_dae
+            pieces = mesh_filepath.split("/")
+            filename = ""
+            if len(pieces) > 0:
+                filename = pieces[len(pieces)-1]
+            else:
+                rospy.loginfo("No mesh file path found, quitting...")
+                return
 
-			mesh_copy_filepath_rbwt = "/home/bo/ros/web-ui/control-panel-react/public/interactive_marker_server/meshes/" + filename
-			mesh_copy_filepath_rviz = "/home/bo/ros/grasp_ws/basestation_ws/src/interactive_marker_server/meshes/" + filename
-			from shutil import copyfile
-			copyfile(mesh_filepath, mesh_copy_filepath_rbwt)
-			copyfile(mesh_filepath, mesh_copy_filepath_rviz)
-			
+            mesh_copy_filepath_rbwt = "/home/bo/ros/web-ui/control-panel-react/public/interactive_marker_server/meshes/" + filename
+            mesh_copy_filepath_rviz = "/home/bo/ros/grasp_ws/basestation_ws/src/interactive_marker_server/meshes/" + filename
+            from shutil import copyfile
+            copyfile(mesh_filepath, mesh_copy_filepath_rbwt)
+            copyfile(mesh_filepath, mesh_copy_filepath_rviz)
+            
+            #object info publisher into roboviewer
+            self.object_info_publisher(object_info)
 
-			position = object_info.object_pose.position
-			object_pose = object_info.object_pose.orientation
-			orientation = geometry_msgs.msg.Quaternion(object_pose.x, object_pose.y, object_pose.z, object_pose.w)
-
-
-			position = Point(position.x, position.y, position.z)
-			# position = Point(0, 0, 0)
-			self.info2name.append({
-				"mesh_path": object_info.mesh_path_ply, 
-				"model_name": "mesh", 
-				"frame": "frame"
-			})
+            position = object_info.object_pose.position
+            object_pose = object_info.object_pose.orientation
+            orientation = geometry_msgs.msg.Quaternion(object_pose.x, object_pose.y, object_pose.z, object_pose.w)
 
 
-			make6DofMarker(fixed=False, 
-				frame="world",
-				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-				position=position,
-				orientation=orientation, 
-				server=self.server,
-				menu_handler=self.menu_handler,
-				show_6dof = True,
-				mesh_filepath = "package://interactive_marker_server/meshes/" + filename)
-			rospy.loginfo("get model info..." + str(object_info.model_name))
-
-		#hard code the table location
-		# table_position = Point(-3.100, 5.099, 0.000)
-		# table_position = Point(-2.991, -0.950, 0.000)
-		# make6DofMarker(fixed=True, 
-		# 		frame="map",
-		# 		interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-		# 		position=table_position, 
-		# 		server=self.server,
-		# 		menu_handler=self.menu_handler,
-		# 		show_6dof = True)
-		# rospy.loginfo("set up the table location ...")
-
-		# back_up_position = Point(-0.553, -0.179, 0.000)
-		# make6DofMarker(fixed=True, 
-		# 		frame="map",
-		# 		interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-		# 		position=back_up_position, 
-		# 		server=self.server,
-		# 		menu_handler=self.menu_handler,
-		# 		show_6dof = True)
-
-		self.server.applyChanges()
+            position = Point(position.x, position.y, position.z)
+            # position = Point(0, 0, 0)
+            self.info2name.append({
+                "mesh_path": object_info.mesh_path_ply, 
+                "model_name": "mesh", 
+                "frame": "frame"
+            })
 
 
+            make6DofMarker(fixed=False, 
+                frame="world",
+                interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+                position=position,
+                orientation=orientation, 
+                server=self.server,
+                menu_handler=self.menu_handler,
+                show_6dof = True,
+                mesh_filepath = "package://interactive_marker_server/meshes/" + filename)
+            rospy.loginfo("get model info..." + str(object_info.model_name))
 
-	def go_there_feedback(self, feedback):
+        #hard code the table location
+        # table_position = Point(-3.100, 5.099, 0.000)
+        # table_position = Point(-2.991, -0.950, 0.000)
+        # make6DofMarker(fixed=True, 
+        #       frame="map",
+        #       interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+        #       position=table_position, 
+        #       server=self.server,
+        #       menu_handler=self.menu_handler,
+        #       show_6dof = True)
+        # rospy.loginfo("set up the table location ...")
 
-		rospy.loginfo("entering go_there_feedback")
-		rospy.loginfo("Waiting for move_base server...")
-		self.move_base_client.wait_for_server()
-			
-		# (trans, rot) = self.tf_listener.lookupTransform('/map', '/world', rospy.Time(0))
-		x = feedback.pose.position.x
-		y = feedback.pose.position.y
-		# skills.goto(self.move_base_client, x, y, 1.57)
-		skills.goto(self.move_base_client, x, y)
+        # back_up_position = Point(-0.553, -0.179, 0.000)
+        # make6DofMarker(fixed=True, 
+        #       frame="map",
+        #       interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+        #       position=back_up_position, 
+        #       server=self.server,
+        #       menu_handler=self.menu_handler,
+        #       show_6dof = True)
 
-		self.server.applyChanges()
+        self.server.applyChanges()
 
-	def grasp_feedback(self,feedback):
-		model_meta = self.info2name[0]
-		model_name=model_meta["model_name"] 
-		mesh_path=model_meta["mesh_path"]
-		frame=model_meta["frame"]
-		rospy.loginfo("planning grasp for " + str(model_meta))
-		self.reachable_grasps = skills.grasp(
-			model_name,
-			mesh_path,
-			frame
-		)
-		rospy.loginfo("entering grasp_feedback")
 
-	def place_feedback(self,feedback):
-		skills.place(self.reachable_grasps)
-		rospy.loginfo("entering pick_feedback")
 
-	# Up
-	def up_feedback(self,feedback):
-		rospy.loginfo("entering up_feedback")
-		# rospy.loginfo("menu entry_id " + str(feedback.menu_entry_id))
-		rospy.loginfo("Raising torso...")
-		self.torso_movement_helper([0.4, ])
+    def go_there_feedback(self, feedback):
 
-	# Down
-	def down_feedback(self,feedback):
-		rospy.loginfo("entering down_feedback")
-		rospy.loginfo("Lowering torso...")
-		self.torso_movement_helper([0.1, ])
+        rospy.loginfo("entering go_there_feedback")
+        rospy.loginfo("Waiting for move_base server...")
+        self.move_base_client.wait_for_server()
+            
+        # (trans, rot) = self.tf_listener.lookupTransform('/map', '/world', rospy.Time(0))
+        x = feedback.pose.position.x
+        y = feedback.pose.position.y
+        # skills.goto(self.move_base_client, x, y, 1.57)
+        skills.goto(self.move_base_client, x, y)
+
+        self.server.applyChanges()
+
+    def grasp_feedback(self,feedback):
+        model_meta = self.info2name[0]
+        model_name=model_meta["model_name"] 
+        mesh_path=model_meta["mesh_path"]
+        frame=model_meta["frame"]
+        rospy.loginfo("planning grasp for " + str(model_meta))
+        self.reachable_grasps = skills.grasp(
+            model_name,
+            mesh_path,
+            frame
+        )
+        rospy.loginfo("entering grasp_feedback")
+
+    def place_feedback(self,feedback):
+        skills.place(self.reachable_grasps)
+        rospy.loginfo("entering pick_feedback")
+
+    # Up
+    def up_feedback(self,feedback):
+        rospy.loginfo("entering up_feedback")
+        # rospy.loginfo("menu entry_id " + str(feedback.menu_entry_id))
+        rospy.loginfo("Raising torso...")
+        self.torso_movement_helper([0.4, ])
+
+    # Down
+    def down_feedback(self,feedback):
+        rospy.loginfo("entering down_feedback")
+        rospy.loginfo("Lowering torso...")
+        self.torso_movement_helper([0.1, ])
    
 
-	def focus_feedback(self,feedback):
-		rospy.loginfo("entering focus_feedback")
-		rospy.loginfo("Waiting for head_controller...")
-		self.head_client.wait_for_server()
-		rospy.loginfo("Looking at the object...")
-		skills.look_at(self.head_client, feedback.pose.position.x, feedback.pose.position.y, feedback.pose.position.z, "world")
+    def focus_feedback(self,feedback):
+        rospy.loginfo("entering focus_feedback")
+        rospy.loginfo("Waiting for head_controller...")
+        self.head_client.wait_for_server()
+        rospy.loginfo("Looking at the object...")
+        skills.look_at(self.head_client, feedback.pose.position.x, feedback.pose.position.y, feedback.pose.position.z, "world")
 
-	def tuck_feedback(self,feedback):
-		rospy.loginfo("entering tuck_feedback")
-		skills.tuck()
+    def tuck_feedback(self,feedback):
+        rospy.loginfo("entering tuck_feedback")
+        skills.tuck()
 
-	def torso_movement_helper(self, positions):
-		rospy.loginfo("Waiting for %s..." % self.torso_name)
-		self.torso_client.wait_for_server()
-		rospy.loginfo("Lowering torso...")
-		skills.move_to(self.torso_client, self.torso_joint_names, positions)
+    def torso_movement_helper(self, positions):
+        rospy.loginfo("Waiting for %s..." % self.torso_name)
+        self.torso_client.wait_for_server()
+        rospy.loginfo("Lowering torso...")
+        skills.move_to(self.torso_client, self.torso_joint_names, positions)
+
+    #object info publisher into roboviewer
+    def object_info_publisher(self, rec_result_info):
+        while not rospy.is_shutdown():
+            pub = rospy.Publisher('/object_info', PoseStamped, queue_size=10)
+            object_info = geometry_msgs.msg.PoseStamped()
+            position = rec_result_info.object_pose.position
+            object_info.pose.position = geometry_msgs.msg.Point(position.x, position.y, position.z)
+            orientation = rec_result_info.object_pose.orientation
+            object_info.pose.orientation = geometry_msgs.msg.Quaternion(orientation.x, orientation.y, orientation.z, orientation.w)
+            # object_info.header.frame_id = ''
+            pub.publish(object_info)
+            break
+        return
 
 
 if __name__ == '__main__':
 
-	try:
-		print "i am here"
-		marker_server = InteractiveMarkerServerNode()
+    try:
+        print "i am here"
+        marker_server = InteractiveMarkerServerNode()
 
-		#hard code the table location
-		# position = Point(-3.100, 5.099, 0.000)
-		position = Point(-2.991, -0.950, 0.000)
-		orientation = geometry_msgs.msg.Quaternion(0.0, 0.0, 0.0, 1.0)
-		make6DofMarker(fixed=True, 
-				frame="map",
-				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-				position=position,
-				orientation = orientation,
-				server=marker_server.server,
-				menu_handler=marker_server.menu_handler,
-				show_6dof = True)
-		rospy.loginfo("set up the table location ...")
+        #hard code the table location
+        # position = Point(-3.100, 5.099, 0.000)
+        position = Point(-2.991, -0.950, 0.000)
+        orientation = geometry_msgs.msg.Quaternion(0.0, 0.0, 0.0, 1.0)
+        make6DofMarker(fixed=True, 
+                frame="map",
+                interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+                position=position,
+                orientation = orientation,
+                server=marker_server.server,
+                menu_handler=marker_server.menu_handler,
+                show_6dof = True)
+        rospy.loginfo("set up the table location ...")
 
-		marker_server.server.applyChanges()
+        marker_server.server.applyChanges()
 
-		back_up_position = Point(-0.553, -0.179, 0.000)
-		make6DofMarker(fixed=False, 
-				frame="map",
-				interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
-				position=back_up_position,
-				orientation = orientation, 
-				server=marker_server.server,
-				menu_handler=marker_server.menu_handler,
-				show_6dof = True)
-		rospy.loginfo("set up the back up location ...")
+        back_up_position = Point(-0.553, -0.179, 0.000)
+        make6DofMarker(fixed=False, 
+                frame="map",
+                interaction_mode=InteractiveMarkerControl.MOVE_ROTATE_3D,
+                position=back_up_position,
+                orientation = orientation, 
+                server=marker_server.server,
+                menu_handler=marker_server.menu_handler,
+                show_6dof = True)
+        rospy.loginfo("set up the back up location ...")
 
 
-		marker_server.server.applyChanges()
+        marker_server.server.applyChanges()
 
-		loop = rospy.Rate(30)
-		while not rospy.is_shutdown():
-			loop.sleep()
+        loop = rospy.Rate(30)
+        while not rospy.is_shutdown():
+            loop.sleep()
 
-	except rospy.ROSInterruptException:
-		pass
+    except rospy.ROSInterruptException:
+        pass
