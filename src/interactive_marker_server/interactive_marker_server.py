@@ -74,53 +74,6 @@ import graspit_msgs.msg
 
 class InteractiveMarkerServerNode():
 
-<<<<<<< HEAD
-    def __init__(self):
-
-        rospy.init_node('interactive_marker_server')
-        rospy.loginfo("starting interactive marker server...")
-        rospy.Subscriber("/run_recognition",  std_msgs.msg.Empty, self.run_recognition)
-        rospy.Subscriber("/up_torso",  std_msgs.msg.Empty, self.up_feedback)
-        rospy.Subscriber("/down_torso",  std_msgs.msg.Empty, self.down_feedback)
-        rospy.Subscriber("/tuck_arm",  std_msgs.msg.Empty, self.tuck_feedback)
-        self.torso_name = "torso_controller"
-        self.torso_joint_names = ["torso_lift_joint"]
-
-        self.move_base_client = actionlib.SimpleActionClient("move_base", MoveBaseAction)
-
-        self.torso_client = actionlib.SimpleActionClient("%s/follow_joint_trajectory" % self.torso_name,
-                                               FollowJointTrajectoryAction)
-        
-
-        self.head_client = actionlib.SimpleActionClient("head_controller/point_head", PointHeadAction)
-        self.rec_objects_action_client = actionlib.SimpleActionClient("recognize_objects_action", graspit_msgs.msg.RunObjectRecognitionAction)
-        self.tf_listener = tf.TransformListener()
-
-        self.info2name = []
-
-
-        self.server = InteractiveMarkerServer("basic_controls")
-
-        self.menu_handler = MenuHandler()
-
-        self.menu_handler.insert( "Go There!", callback=self.go_there_feedback)
-        self.menu_handler.insert( "Grasp It!", callback=self.grasp_feedback)
-        self.menu_handler.insert( "Place It!", callback=self.place_feedback)
-        # self.menu_handler.insert( "Up!", callback=self.up_feedback )
-        # self.menu_handler.insert( "Down!", callback=self.down_feedback )
-        self.menu_handler.insert( "Focus on Object!", callback=self.focus_feedback )
-        # self.menu_handler.insert( "Tuck Arm!", callback=self.tuck_feedback )
-        
-        # position = Point(0, 0, 0)
-        # make6DofMarker(False, "base_link", InteractiveMarkerControl.NONE, position, True)
-        self.server.applyChanges()
-        rospy.loginfo("interactive marker server starts up successfully...")
-        self.reachable_grasps = []
-
-    def run_recognition(self, msg):
-        rospy.loginfo("entering run recognition call back...")
-        goal = graspit_msgs.msg.RunObjectRecognitionActionGoal()
-=======
 	def __init__(self):
 
 		rospy.init_node('interactive_marker_server')
@@ -167,7 +120,6 @@ class InteractiveMarkerServerNode():
 	def run_recognition(self, msg):
 		rospy.loginfo("entering run recognition call back...")
 		goal = graspit_msgs.msg.RunObjectRecognitionActionGoal()
->>>>>>> 16ca8d3929c1d4884b62308fb9993d51c1fe7021
    
         # TODO wait for things to work
         self.rec_objects_action_client.send_goal(goal)
